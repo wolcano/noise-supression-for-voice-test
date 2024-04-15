@@ -28,7 +28,7 @@
 #define RNN_H_
 
 #include "rnnoise.h"
-#include "rnnoise_data.h"
+//#include "rnnoise_data.h"
 
 #include "opus_types.h"
 
