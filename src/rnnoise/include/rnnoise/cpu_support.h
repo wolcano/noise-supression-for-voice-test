@@ -1,5 +1,5 @@
-/* Copyright (c) 2009-2010 Xiph.Org Foundation
-   Written by Jean-Marc Valin */
+/* Copyright (c) 2010 Xiph.Org Foundation
+ * Copyright (c) 2013 Parrot */
 /*
    Redistribution and use in source and binary forms, with or without
    modification, are permitted provided that the following conditions
@@ -25,21 +25,29 @@
    SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#ifndef PLC_H
-#define PLC_H
+#ifndef CPU_SUPPORT_H
+#define CPU_SUPPORT_H
 
-#include "arch.h"
+#include "opus_types.h"
 #include "common.h"
 
-#if defined(OPUS_X86_MAY_HAVE_SSE4_1)
-#include "x86/celt_lpc_sse.h"
+#ifdef RNN_ENABLE_X86_RTCD
+
+#include "x86/x86cpu.h"
+/* We currently support 5 x86 variants:
+ * arch[0] -> sse2
+ * arch[1] -> sse4.1
+ * arch[2] -> avx2
+ */
+#define OPUS_ARCHMASK 3
+int rnn_select_arch(void);
+
+#else
+#define OPUS_ARCHMASK 0
+
+static OPUS_INLINE int rnn_select_arch(void)
+{
+  return 0;
+}
 #endif
-
-#define LPC_ORDER 24
-
-void rnn_lpc(opus_val16 *_lpc, const opus_val32 *ac, int p);
-
-int rnn_autocorr(const opus_val16 *x, opus_val32 *ac,
-         const opus_val16 *window, int overlap, int lag, int n);
-
-#endif /* PLC_H */
+#endif

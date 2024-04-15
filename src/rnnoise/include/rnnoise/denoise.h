@@ -1,5 +1,4 @@
-/* Copyright (c) 2009-2010 Xiph.Org Foundation
-   Written by Jean-Marc Valin */
+/* Copyright (c) 2017 Mozilla */
 /*
    Redistribution and use in source and binary forms, with or without
    modification, are permitted provided that the following conditions
@@ -15,8 +14,8 @@
    THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
    ``AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
    LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
-   A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER
-   OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+   A PARTICULAR PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL THE FOUNDATION OR
+   CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
    EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
    PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
    PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
@@ -25,21 +24,33 @@
    SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#ifndef PLC_H
-#define PLC_H
+#include "rnnoise.h"
+#include "kiss_fft.h"
+#include "nnet.h"
 
-#include "arch.h"
-#include "common.h"
+#define FRAME_SIZE 480
+#define WINDOW_SIZE (2*FRAME_SIZE)
+#define FREQ_SIZE (FRAME_SIZE + 1)
+#define NB_BANDS 32
+#define NB_FEATURES (2*NB_BANDS+1)
 
-#if defined(OPUS_X86_MAY_HAVE_SSE4_1)
-#include "x86/celt_lpc_sse.h"
-#endif
 
-#define LPC_ORDER 24
+#define PITCH_MIN_PERIOD 60
+#define PITCH_MAX_PERIOD 768
+#define PITCH_FRAME_SIZE 960
+#define PITCH_BUF_SIZE (PITCH_MAX_PERIOD+PITCH_FRAME_SIZE)
 
-void rnn_lpc(opus_val16 *_lpc, const opus_val32 *ac, int p);
+extern const WeightArray rnnoise_arrays[];
 
-int rnn_autocorr(const opus_val16 *x, opus_val32 *ac,
-         const opus_val16 *window, int overlap, int lag, int n);
+extern const int eband20ms[];
 
-#endif /* PLC_H */
+
+void rnn_biquad(float *y, float mem[2], const float *x, const float *b, const float *a, int N);
+
+void rnn_pitch_filter(kiss_fft_cpx *X, const kiss_fft_cpx *P, const float *Ex, const float *Ep,
+                  const float *Exp, const float *g);
+
+void rnn_frame_analysis(DenoiseState *st, kiss_fft_cpx *X, float *Ex, const float *in);
+
+int rnn_compute_frame_features(DenoiseState *st, kiss_fft_cpx *X, kiss_fft_cpx *P,
+                                  float *Ex, float *Ep, float *Exp, float *features, const float *in);
